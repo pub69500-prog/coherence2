@@ -272,22 +272,6 @@ h1 {
     display: block;
 }
 
-/* Affichage d'un son fixe (inhale/exhale générés) */
-.fixed-sound {
-    width: 100%;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0.8rem 1rem;
-    border: 1px solid rgba(127, 169, 155, 0.3);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.8);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
-    color: var(--primary);
-}
-
 input[type="number"],
 select {
     width: 100%;

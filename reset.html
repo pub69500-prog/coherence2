@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réinitialisation - Cohérence Cardiaque</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2d4654;
+            margin-top: 0;
+        }
+        button {
+            background: #7fa99b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #6a8f82;
+        }
+        .success {
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 Réinitialisation de l'application</h1>
+        
+        <div class="info">
+            <strong>📋 Statut actuel :</strong>
+            <div id="status" class="status">Chargement...</div>
+        </div>
+
+        <button onclick="resetAll()">🔄 Réinitialiser complètement</button>
+        <button onclick="viewStorage()">👀 Voir le localStorage</button>
+        <button onclick="goToApp()">➡️ Ouvrir l'application</button>
+
+        <div id="success" class="success">
+            ✅ Réinitialisation réussie ! Les sons par défaut seront sélectionnés au prochain chargement.
+        </div>
+
+        <div style="margin-top: 30px; font-size: 14px; color: #666;">
+            <strong>💡 Instructions :</strong>
+            <ol>
+                <li>Cliquer sur "Réinitialiser complètement"</li>
+                <li>Cliquer sur "Ouvrir l'application"</li>
+                <li>Vérifier que <code>cloche.mp3</code> et <code>bol.mp3</code> sont sélectionnés</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Afficher le statut actuel
+        function updateStatus() {
+            const inhale = localStorage.getItem('cc_inhale_sound');
+            const exhale = localStorage.getItem('cc_exhale_sound');
+            const music = localStorage.getItem('cc_music_volume');
+            
+            let html = '<strong>Préférences actuelles :</strong><br>';
+            html += `• Son inspiration : <code>${inhale || 'non défini'}</code><br>`;
+            html += `• Son expiration : <code>${exhale || 'non défini'}</code><br>`;
+            html += `• Volume musique : <code>${music || '30'}%</code>`;
+            
+            document.getElementById('status').innerHTML = html;
+        }
+
+        // Réinitialiser tout
+        function resetAll() {
+            // Effacer tout le localStorage
+            localStorage.clear();
+            
+            // Afficher le message de succès
+            document.getElementById('success').style.display = 'block';
+            
+            // Mettre à jour l'affichage
+            updateStatus();
+            
+            console.log('✅ localStorage complètement effacé');
+            
+            // Cacher le message après 3 secondes
+            setTimeout(() => {
+                document.getElementById('success').style.display = 'none';
+            }, 3000);
+        }
+
+        // Voir tout le localStorage
+        function viewStorage() {
+            console.clear();
+            console.log('📦 Contenu du localStorage :');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                console.log(`${key} = ${value}`);
+            }
+            alert('Voir la console (Cmd+Option+I) pour les détails');
+        }
+
+        // Ouvrir l'application
+        function goToApp() {
+            window.location.href = './index.html';
+        }
+
+        // Initialisation
+        updateStatus();
+    </script>
+</body>
+</html>

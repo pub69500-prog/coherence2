@@ -1,101 +1,168 @@
-# Cohérence Cardiaque - Application Optimisée
+# Cohérence Cardiaque 🫁
 
-## 🎯 Modifications apportées
+Application web professionnelle de cohérence cardiaque avec interface zen et apaisante.
 
-Cette version de l'application a été nettoyée et optimisée selon les spécifications suivantes :
+**✨ Version PWA - Installable sur iPhone comme une vraie application !**
 
-### 1. Sons de respiration pré-sélectionnés
-- **Inspiration** : Son de cloche (`sounds/inhale/cloche.mp3`)
-- **Expiration** : Son de bol tibétain (`sounds/exhale/bol.mp3`)
-- Ces sons sont fixes et ne peuvent pas être changés
-- Seul le **volume** de chaque son est réglable par l'utilisateur
+## 🌟 Fonctionnalités
 
-### 2. Musique d'ambiance par défaut
-- **Musique intégrée** : `Music1.mp3` dans le répertoire `music/`
-- Chargement **automatique** au démarrage de l'application
-- Affichage dans un **menu déroulant** (extensible si plusieurs musiques sont ajoutées)
-- Volume réglable indépendamment
+- **Séances personnalisables** : Durée ajustable (1-30 minutes)
+- **Rythme respiratoire configurable** : Temps d'inspiration et d'expiration personnalisables
+- **Sons de respiration** :
+  - 4 sons de cloches synthétisés (Tibétaine, Cristal, Bol Chantant, Carillon)
+  - Import de sons personnalisés (MP3, WAV, etc.)
+  - Contrôle de volume indépendant pour inspiration et expiration
+- **Bibliothèque musicale** : Ajoutez plusieurs musiques de fond
+- **Animations fluides** : Cercle de respiration guidé visuellement
+- **Statistiques en temps réel** : Cycles, respirations, progression
+- **💾 Sauvegarde automatique** : Vos préférences sont mémorisées
+- **📱 Mode hors ligne** : Fonctionne sans connexion internet
+- **🏠 Installable** : Ajoutez-la à votre écran d'accueil iPhone
+- **Design responsive** : Fonctionne sur desktop, tablette et mobile
+- **Compatible iOS** : Optimisé pour Safari iPhone/iPad
 
-### 3. Compatibilité iPhone écran verrouillé
-- ✅ Wake Lock pour empêcher la mise en veille
-- ✅ Audio silencieux en arrière-plan pour iOS
-- ✅ Les 3 sons (inspiration, expiration, musique) continuent même écran verrouillé
-- ✅ Synchronisation parfaite maintenue
+## 📱 Installation sur iPhone
 
-### 4. Synchronisation des sons
-- Les sons d'inspiration et d'expiration sont **parfaitement synchronisés** avec le rythme respiratoire sélectionné
-- Le minutage s'adapte automatiquement aux durées configurées (3 à 10 secondes)
+**Guide complet : [INSTALLATION.md](INSTALLATION.md)**
 
-### 5. Nettoyage effectué
-- ❌ Supprimés : tous les fichiers de documentation (.md)
-- ❌ Supprimés : scripts de test et validation
-- ❌ Supprimé : upload de fichiers audio personnalisés
-- ✅ Conservés : uniquement les fichiers essentiels au fonctionnement
+### Rapide :
+1. Hébergez l'app sur GitHub Pages / Netlify
+2. Ouvrez avec Safari sur iPhone
+3. Partagez → "Sur l'écran d'accueil"
+4. Profitez ! 🎉
 
-## 📁 Structure de l'application
+## 📁 Structure du projet
 
 ```
-coherence-clean/
+coherence-cardiaque/
 ├── index.html              # Page principale
-├── manifest.json           # Manifest PWA
-├── sw.js                   # Service Worker
-├── assets/
-│   └── audio-manifest.json # Manifest des musiques
 ├── css/
-│   └── style.css          # Styles
+│   └── style.css          # Styles de l'application
 ├── js/
 │   └── app.js             # Logique de l'application
-├── icons/
-│   ├── icon-192x192.png   # Icône PWA
-│   └── icon-512x512.png   # Icône PWA
-├── music/
-│   └── Music1.mp3         # Musique d'ambiance par défaut
-└── sounds/
-    ├── inhale/
-    │   └── cloche.mp3     # Son d'inspiration (fixe)
-    └── exhale/
-        └── bol.mp3        # Son d'expiration (fixe)
+├── sounds/
+│   ├── inhale/            # Placez vos sons d'inspiration ici (*.mp3, *.wav)
+│   └── exhale/            # Placez vos sons d'expiration ici (*.mp3, *.wav)
+├── music/                 # Placez vos musiques d'ambiance ici (*.mp3)
+└── README.md              # Ce fichier
 ```
 
 ## 🚀 Utilisation
 
-1. **Ouvrir l'application** : Double-cliquer sur `index.html` ou héberger sur un serveur web
-2. **Sur iPhone** : Ajouter à l'écran d'accueil pour l'expérience PWA complète
-3. **Réglages disponibles** :
-   - Durée de la séance (1-30 minutes)
-   - Rythme respiratoire (inspiration et expiration de 3 à 10 secondes)
-   - Volume des sons d'inspiration et d'expiration
-   - Volume de la musique d'ambiance
-4. **Commencer** : Cliquer sur "Commencer" pour démarrer la séance
+### Installation
 
-## 🎵 Ajouter d'autres musiques
+1. Clonez ce repository :
+```bash
+git clone https://github.com/votre-username/coherence-cardiaque.git
+cd coherence-cardiaque
+```
 
-Pour ajouter d'autres musiques d'ambiance :
+2. Ajoutez vos fichiers audio (optionnel) :
+   - Sons d'inspiration → dossier `sounds/inhale/`
+   - Sons d'expiration → dossier `sounds/exhale/`
+   - Musiques de fond → dossier `music/`
 
-1. Placer les fichiers MP3 dans le répertoire `music/`
-2. Mettre à jour le fichier `assets/audio-manifest.json` :
-   ```json
-   {
-     "music": ["Music1.mp3", "Music2.mp3", "Music3.mp3"]
-   }
-   ```
-3. Les musiques apparaîtront automatiquement dans le menu déroulant
+3. Ouvrez `index.html` dans votre navigateur
 
-## 📱 Fonctionnalités iOS
+### Utilisation en local
 
-- **Écran verrouillé** : L'audio continue de fonctionner
-- **PWA** : Installable comme une application native
-- **Hors ligne** : Fonctionne sans connexion internet grâce au Service Worker
-- **Wake Lock** : Empêche la mise en veille pendant la séance
+Aucun serveur n'est nécessaire pour l'utilisation basique. Ouvrez simplement `index.html` dans votre navigateur.
 
-## 💾 Historique
+Pour un développement avec rechargement automatique, vous pouvez utiliser :
 
-L'application enregistre automatiquement vos séances terminées et affiche des statistiques :
-- Aujourd'hui
-- Semaine
-- Mois
-- Année
+```bash
+# Avec Python 3
+python -m http.server 8000
+
+# Avec Node.js (npx)
+npx serve
+
+# Avec PHP
+php -S localhost:8000
+```
+
+Puis accédez à `http://localhost:8000`
+
+## 🎨 Personnalisation
+
+### Ajouter des sons personnalisés
+
+Les dossiers `sounds/inhale/` et `sounds/exhale/` sont prévus pour accueillir vos fichiers audio. Les formats supportés sont : MP3, WAV, OGG, etc.
+
+**Note** : Pour l'instant, l'upload se fait via l'interface. Les dossiers sont prévus pour une future fonctionnalité de chargement automatique.
+
+### Ajouter des musiques
+
+Le dossier `music/` est prévu pour stocker vos musiques d'ambiance. Vous pouvez pour l'instant les ajouter via l'interface de l'application.
+
+### Modifier les couleurs
+
+Les couleurs sont définies dans `css/style.css` via des variables CSS :
+
+```css
+:root {
+    --primary: #2d4654;    /* Couleur principale */
+    --secondary: #7fa99b;  /* Couleur secondaire */
+    --accent: #e8d5b5;     /* Couleur d'accent */
+    --light: #f5f1e8;      /* Fond clair */
+}
+```
+
+## 🎯 Guide d'utilisation
+
+1. **Configurez votre séance** :
+   - Durée souhaitée
+   - Temps d'inspiration et d'expiration
+
+2. **Choisissez vos sons** :
+   - Sons de cloche intégrés ou personnalisés
+   - Ajustez les volumes
+
+3. **Ajoutez une musique** (optionnel) :
+   - Uploadez un ou plusieurs fichiers MP3
+   - Sélectionnez celle que vous voulez utiliser
+
+4. **Cliquez sur "Commencer"** et laissez-vous guider !
+
+## 📱 Compatibilité
+
+- ✅ Chrome (desktop & mobile)
+- ✅ Safari (desktop & iOS)
+- ✅ Firefox
+- ✅ Edge
+
+**Optimisations iOS** :
+- Support des safe-area pour iPhone X et plus récents
+- Gestion de l'autoplay audio
+- Responsive adapté aux petits écrans
+
+## 🛠️ Technologies utilisées
+
+- HTML5
+- CSS3 (Grid, Flexbox, Animations, Variables CSS)
+- JavaScript Vanilla (ES6+)
+- Web Audio API (synthèse sonore)
+- HTML5 Audio API (lecture fichiers)
+
+## 📄 Licence
+
+Ce projet est libre d'utilisation. N'hésitez pas à le fork, le modifier et le partager !
+
+## 🤝 Contributions
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+- Ouvrir une issue pour signaler un bug
+- Proposer des améliorations
+- Soumettre une pull request
+
+## 👨‍💻 Auteur
+
+Créé avec ❤️ pour promouvoir le bien-être et la cohérence cardiaque
+
+## 🙏 Remerciements
+
+Merci à tous ceux qui pratiquent et promeuvent la cohérence cardiaque pour ses bienfaits sur la santé mentale et physique.
 
 ---
 
-**Fait avec ❤️ par Chris**
+**Bonne pratique ! 🧘‍♂️**

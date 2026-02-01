@@ -1,0 +1,14 @@
+# Exemple de fichier son
+
+Ce fichier est un placeholder. 
+
+Remplacez-le par vos propres fichiers audio aux formats :
+- MP3
+- WAV  
+- OGG
+- M4A
+
+Pour tester l'application, vous pouvez :
+1. Télécharger des sons de cloches tibétaines libres de droits
+2. Utiliser les sons synthétisés intégrés dans l'application
+3. Uploader vos propres sons via l'interface
