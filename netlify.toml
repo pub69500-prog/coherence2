@@ -1,3 +1,0 @@
-[build]
-  command = "python3 generate-audio-manifest.py"
-  publish = "."

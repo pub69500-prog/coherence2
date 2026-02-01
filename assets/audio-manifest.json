@@ -1,17 +1,3 @@
 {
-  "inhale": [
-    "bol-tibetain-aigu.mp3",
-    "clochette-claire.mp3",
-    "carillon-doux.mp3"
-  ],
-  "exhale": [
-    "bol-tibetain-grave.mp3",
-    "cloche-profonde.mp3",
-    "gong-leger.mp3"
-  ],
-  "music": [
-    "meditation-432hz.mp3",
-    "nature-forest.mp3",
-    "ambient-relax.mp3"
-  ]
+  "music": ["Music1.mp3"]
 }

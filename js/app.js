@@ -1,15 +1,10 @@
-// Cohérence Cardiaque - App
+// Cohérence Cardiaque - App Optimisée
 //
-// Objectifs clés iOS/Safari :
-// - Les sons d'inspiration/expiration fonctionnent pendant toute la séance
-// - Les sons continuent écran verrouillé
-// - Les volumes sont réglables à tout moment
-//
-// Stratégie :
-// - Générer 2 sons WAV en mémoire (Blob URLs)
-// - Utiliser 2 instances HTMLAudio persistantes (inhale/exhale)
-// - Déverrouiller (play/pause muet) AU CLIC sur "Commencer"
-// - Musique : HTMLAudio (iOS) avec loop + volume live + fondu 5s fin de séance
+// Configuration :
+// - Sons d'inspiration/expiration : fichiers MP3 pré-sélectionnés (cloche.mp3 et bol.mp3)
+// - Musique d'ambiance : Music1.mp3 chargée automatiquement par défaut
+// - Compatible iPhone avec écran verrouillé
+// - Synchronisation parfaite des sons avec le rythme respiratoire
 
 // -----------------------
 // Stockage local
@@ -69,7 +64,7 @@ function startOfDay(d) {
 }
 function startOfWeekMonday(d) {
   const x = startOfDay(d);
-  const day = (x.getDay() + 6) % 7; // 0 = lundi
+  const day = (x.getDay() + 6) % 7;
   x.setDate(x.getDate() - day);
   return x;
 }
@@ -98,105 +93,15 @@ function formatDuration(sec) {
   return `${mins} min ${rem}s`;
 }
 function computeStatsForRange(sessions, start, endExclusive, periodDays) {
-  let totalSec = 0;
-  let count = 0;
-  let totalBreaths = 0;
-  let totalCycles = 0;
-
-  for (const s of sessions) {
-    const t = new Date(s.endedAt);
-    if (!isFinite(t)) continue;
-    if (!isBetween(t, start, endExclusive)) continue;
-    totalSec += Number(s.durationSec) || 0;
-    count += 1;
-    totalBreaths += Number(s.breaths) || 0;
-    totalCycles += Number(s.cycles) || 0;
-  }
-
-  return {
-    totalSec,
-    count,
-    avgPerSessionSec: count ? totalSec / count : 0,
-    avgPerDaySec: periodDays ? totalSec / periodDays : 0,
-    totalBreaths,
-    totalCycles
-  };
-}
-
-// -----------------------
-// Synthèse WAV (Blob URL)
-// -----------------------
-function floatTo16BitPCM(view, offset, input) {
-  for (let i = 0; i < input.length; i++, offset += 2) {
-    let s = Math.max(-1, Math.min(1, input[i]));
-    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-  }
-}
-function writeString(view, offset, string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
-}
-function encodeWAV(samples, sampleRate) {
-  const buffer = new ArrayBuffer(44 + samples.length * 2);
-  const view = new DataView(buffer);
-
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + samples.length * 2, true);
-  writeString(view, 8, 'WAVE');
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(view, 36, 'data');
-  view.setUint32(40, samples.length * 2, true);
-
-  floatTo16BitPCM(view, 44, samples);
-  return new Blob([view], { type: 'audio/wav' });
-}
-
-// Cloche aiguë : attaque très courte + décroissance rapide + harmoniques
-function synthBellWav({ freq = 880, durationSec = 0.45, sampleRate = 44100 } = {}) {
-  const n = Math.floor(durationSec * sampleRate);
-  const out = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const t = i / sampleRate;
-    const attack = Math.min(1, t / 0.004);
-    const decay = Math.exp(-t * 10.0);
-    const env = attack * decay;
-
-    const s =
-      0.80 * Math.sin(2 * Math.PI * freq * t) +
-      0.25 * Math.sin(2 * Math.PI * (freq * 2.01) * t) +
-      0.18 * Math.sin(2 * Math.PI * (freq * 3.98) * t);
-
-    out[i] = 0.9 * env * s;
-  }
-  return URL.createObjectURL(encodeWAV(out, sampleRate));
-}
-
-// Bol tibétain grave : décroissance plus lente, timbre rond
-function synthBowlWav({ freq = 220, durationSec = 0.70, sampleRate = 44100 } = {}) {
-  const n = Math.floor(durationSec * sampleRate);
-  const out = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const t = i / sampleRate;
-    const attack = Math.min(1, t / 0.010);
-    const decay = Math.exp(-t * 4.2);
-    const env = attack * decay;
-
-    const s =
-      0.85 * Math.sin(2 * Math.PI * freq * t) +
-      0.30 * Math.sin(2 * Math.PI * (freq * 2.005) * t) +
-      0.18 * Math.sin(2 * Math.PI * (freq * 3.01) * t);
-
-    out[i] = 0.95 * env * s;
-  }
-  return URL.createObjectURL(encodeWAV(out, sampleRate));
+  const filtered = sessions.filter(s => {
+    const d = new Date(s.endedAt);
+    return isBetween(d, start, endExclusive);
+  });
+  const count = filtered.length;
+  const totalSec = filtered.reduce((sum, s) => sum + (s.durationSec || 0), 0);
+  const avgPerSessionSec = count > 0 ? totalSec / count : 0;
+  const avgPerDaySec = periodDays > 0 ? totalSec / periodDays : 0;
+  return { count, totalSec, avgPerSessionSec, avgPerDaySec };
 }
 
 // -----------------------
@@ -219,6 +124,7 @@ function isIOS() {
 function setupBackgroundMusicAudioGraph(backgroundAudio, musicVolumeSlider) {
   if (!backgroundAudio) return;
 
+  // Sur iOS, on utilise directement l'élément HTML Audio
   if (isIOS()) {
     try { if (backgroundSourceNode) backgroundSourceNode.disconnect(); } catch (_) {}
     try { if (backgroundGainNode) backgroundGainNode.disconnect(); } catch (_) {}
@@ -359,7 +265,6 @@ const endScreenCloseBtn = document.getElementById('endScreenCloseBtn');
 const sessionDurationInput = document.getElementById('sessionDuration');
 const inhaleTimeInput = document.getElementById('inhaleTime');
 const exhaleTimeInput = document.getElementById('exhaleTime');
-const backgroundMusicInput = document.getElementById('backgroundMusic');
 
 const inhaleVolumeSlider = document.getElementById('inhaleVolume');
 const exhaleVolumeSlider = document.getElementById('exhaleVolume');
@@ -372,7 +277,7 @@ const musicVolumeControl = document.getElementById('musicVolumeControl');
 const encouragementPhrases = [
   'Quelques minutes suffisent : ta régularité fait la différence.',
   'Bravo. À force de répéter, ton corps apprend à se calmer plus vite.',
-  'Tu viens d’offrir une vraie pause à ton système nerveux. Continue comme ça.',
+  'Tu viens d'offrir une vraie pause à ton système nerveux. Continue comme ça.',
   'Belle séance. Refaire ce rituel régulièrement change beaucoup de choses.',
   'Chaque séance est un petit entraînement vers plus de sérénité.',
   'Tu progresses. Même une courte séance compte.'
@@ -483,7 +388,7 @@ function renderHistory() {
   const yearStats = computeStatsForRange(sessions, yearStart, yearEnd, 365);
 
   const cards = [
-    { title: 'Aujourd’hui', s: dayStats },
+    { title: 'Aujourd'hui', s: dayStats },
     { title: 'Semaine', s: weekStats },
     { title: 'Mois', s: monthStats },
     { title: 'Année', s: yearStats }
@@ -502,13 +407,22 @@ function renderHistory() {
   }).join('');
 }
 
+// -----------------------
+// Sons de respiration (pré-sélectionnés)
+// -----------------------
 function ensureBreathingSources() {
-  if (!inhaleSrc) inhaleSrc = synthBellWav();
-  if (!exhaleSrc) exhaleSrc = synthBowlWav();
+  // Sons par défaut fixés :
+  // - Inspiration : ./sounds/inhale/cloche.mp3
+  // - Expiration  : ./sounds/exhale/bol.mp3
+  if (!inhaleSrc) inhaleSrc = './sounds/inhale/cloche.mp3';
+  if (!exhaleSrc) exhaleSrc = './sounds/exhale/bol.mp3';
 }
 
 function unlockBreathingAudio() {
+  console.log('🔓 Déverrouillage des sons de respiration...');
   ensureBreathingSources();
+
+  console.log(`📂 Sources: inhale=${inhaleSrc}, exhale=${exhaleSrc}`);
 
   inhaleAudio = new Audio(inhaleSrc);
   exhaleAudio = new Audio(exhaleSrc);
@@ -516,81 +430,91 @@ function unlockBreathingAudio() {
   inhaleAudio.preload = 'auto';
   exhaleAudio.preload = 'auto';
 
+  // Déverrouillage iOS : play puis pause silencieux
   inhaleAudio.volume = 0;
   exhaleAudio.volume = 0;
 
-  inhaleAudio.play().then(() => inhaleAudio.pause()).catch(() => {});
-  exhaleAudio.play().then(() => exhaleAudio.pause()).catch(() => {});
+  console.log('🔊 Déverrouillage iOS en cours...');
+  
+  inhaleAudio.play()
+    .then(() => {
+      inhaleAudio.pause();
+      console.log('✅ Son inspiration déverrouillé');
+    })
+    .catch((e) => {
+      console.error('❌ Erreur déverrouillage inspiration:', e);
+    });
+    
+  exhaleAudio.play()
+    .then(() => {
+      exhaleAudio.pause();
+      console.log('✅ Son expiration déverrouillé');
+    })
+    .catch((e) => {
+      console.error('❌ Erreur déverrouillage expiration:', e);
+    });
 
   inhaleAudio.currentTime = 0;
   exhaleAudio.currentTime = 0;
 
+  // Application du volume utilisateur
   inhaleAudio.volume = parseInt(inhaleVolumeSlider.value, 10) / 100;
   exhaleAudio.volume = parseInt(exhaleVolumeSlider.value, 10) / 100;
+  
+  console.log('✅ Sons prêts avec volumes:', {
+    inhale: inhaleVolumeSlider.value + '%',
+    exhale: exhaleVolumeSlider.value + '%'
+  });
 }
 
 function playBreathSound(phase) {
   if (phase === 'inhale') {
-    if (!inhaleAudio) return;
+    if (!inhaleAudio) {
+      console.error('❌ inhaleAudio non initialisé');
+      return;
+    }
     const v = parseInt(inhaleVolumeSlider.value, 10) / 100;
     try {
       inhaleAudio.pause();
       inhaleAudio.currentTime = 0;
       inhaleAudio.volume = v;
-    } catch (_) {}
-    inhaleAudio.play().catch(() => {});
+    } catch (e) {
+      console.error('❌ Erreur préparation son inspiration:', e);
+    }
+    inhaleAudio.play().catch((e) => {
+      console.error('❌ Erreur lecture son inspiration:', e);
+    });
+    console.log('🔔 Son inspiration joué (volume:', Math.round(v * 100) + '%)');
   } else {
-    if (!exhaleAudio) return;
+    if (!exhaleAudio) {
+      console.error('❌ exhaleAudio non initialisé');
+      return;
+    }
     const v = parseInt(exhaleVolumeSlider.value, 10) / 100;
     try {
       exhaleAudio.pause();
       exhaleAudio.currentTime = 0;
       exhaleAudio.volume = v;
-    } catch (_) {}
-    exhaleAudio.play().catch(() => {});
+    } catch (e) {
+      console.error('❌ Erreur préparation son expiration:', e);
+    }
+    exhaleAudio.play().catch((e) => {
+      console.error('❌ Erreur lecture son expiration:', e);
+    });
+    console.log('🎵 Son expiration joué (volume:', Math.round(v * 100) + '%)');
   }
 }
 
-function renderMusicLibrary() {
-  const musicListEl = document.getElementById('musicList');
-  const musicLibraryEl = document.getElementById('musicLibrary');
-  if (!musicListEl || !musicLibraryEl) return;
-
-  if (musicLibrary.length === 0) {
-    musicLibraryEl.style.display = 'none';
-    musicListEl.innerHTML = '';
+// -----------------------
+// Musique d'ambiance (chargement automatique)
+// -----------------------
+function selectMusic(index) {
+  if (index < 0 || index >= musicLibrary.length) {
+    console.warn(`⚠️ Index musique invalide: ${index}`);
     return;
   }
 
-  musicLibraryEl.style.display = 'block';
-
-  musicListEl.innerHTML = musicLibrary.map((m, idx) => {
-    const active = idx === currentMusicIndex ? 'active' : '';
-    return `
-      <div class="music-item ${active}">
-        <button class="music-select" data-idx="${idx}" type="button">${m.name}</button>
-        <button class="music-remove" data-rm="${idx}" type="button" aria-label="Supprimer">✕</button>
-      </div>
-    `;
-  }).join('');
-
-  musicListEl.querySelectorAll('button.music-select').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-idx'), 10);
-      selectMusic(idx);
-    });
-  });
-
-  musicListEl.querySelectorAll('button.music-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-rm'), 10);
-      removeMusic(idx);
-    });
-  });
-}
-
-function selectMusic(index) {
-  if (index < 0 || index >= musicLibrary.length) return;
+  console.log(`🎵 Sélection musique #${index}:`, musicLibrary[index]);
 
   currentMusicIndex = index;
   const selected = musicLibrary[index];
@@ -600,6 +524,7 @@ function selectMusic(index) {
   }
 
   if (!selected.audio) {
+    console.log(`🔊 Création de l'élément Audio pour: ${selected.url}`);
     selected.audio = new Audio(selected.url);
     selected.audio.preload = 'auto';
     selected.audio.loop = true;
@@ -610,81 +535,76 @@ function selectMusic(index) {
   setupBackgroundMusicAudioGraph(backgroundAudio, musicVolumeSlider);
   setMusicVolumeFromUI(backgroundAudio, musicVolumeSlider);
 
-  const musicFileName = document.getElementById('musicFileName');
-  if (musicFileName) musicFileName.textContent = `Sélectionnée: ${selected.name}`;
   if (musicVolumeControl) musicVolumeControl.style.display = 'flex';
 
-  renderMusicLibrary();
+  console.log('✅ Musique sélectionnée et prête');
 
+  // Démarrer la musique si une session est en cours
   if (isRunning) {
-    backgroundAudio.play().catch(() => {});
+    backgroundAudio.play().catch((e) => {
+      console.error('❌ Erreur lecture musique:', e);
+    });
   }
-}
-
-function removeMusic(index) {
-  if (index < 0 || index >= musicLibrary.length) return;
-
-  if (index === currentMusicIndex) {
-    if (backgroundAudio) {
-      try { backgroundAudio.pause(); } catch (_) {}
-    }
-    backgroundAudio = null;
-    currentMusicIndex = -1;
-    const musicFileName = document.getElementById('musicFileName');
-    if (musicFileName) musicFileName.textContent = '';
-    if (musicVolumeControl) musicVolumeControl.style.display = 'none';
-  }
-
-  try { URL.revokeObjectURL(musicLibrary[index].url); } catch (_) {}
-  musicLibrary.splice(index, 1);
-
-  if (currentMusicIndex > index) currentMusicIndex--;
-
-  renderMusicLibrary();
 }
 
 async function loadBundledAudioManifest() {
   try {
-    const res = await fetch('./assets/audio-manifest.json', { cache: 'no-store' });
-    if (!res.ok) return;
-    const data = await res.json();
+    console.log('📦 Chargement du manifest audio...');
+    let data = null;
+    const inline = document.getElementById('bundledAudioManifest');
+    if (inline && inline.textContent) {
+      try { 
+        data = JSON.parse(inline.textContent); 
+        console.log('✅ Manifest inline chargé:', data);
+      } catch (e) { 
+        console.error('❌ Erreur parsing manifest inline:', e);
+        data = null; 
+      }
+    }
+
+    if (!data) {
+      console.log('🌐 Tentative de chargement depuis assets/audio-manifest.json...');
+      const res = await fetch('./assets/audio-manifest.json', { cache: 'no-store' });
+      if (!res.ok) {
+        console.warn('⚠️ Fichier manifest non trouvé');
+        return;
+      }
+      data = await res.json();
+      console.log('✅ Manifest externe chargé:', data);
+    }
 
     if (Array.isArray(data.music) && data.music.length > 0) {
       data.music.forEach((fileName) => {
         if (!/\.(mp3|wav)$/i.test(fileName)) return;
         const url = `./music/${encodeURIComponent(fileName)}`;
         if (musicLibrary.some(m => m.name === fileName)) return;
-        musicLibrary.push({ name: fileName, url, audio: null });
+        musicLibrary.push({ name: fileName, url, audio: null, isBundled: true });
+        console.log(`🎵 Musique ajoutée: ${fileName}`);
       });
-      renderMusicLibrary();
+      
+      // Sélection automatique de la première musique
       if (currentMusicIndex === -1 && musicLibrary.length > 0) {
+        console.log('🎯 Sélection de la musique par défaut...');
         selectMusic(0);
       }
+    } else {
+      console.log('ℹ️ Aucune musique dans le manifest');
     }
-  } catch (_) {
-    // optionnel
+  } catch (e) {
+    console.error('❌ Erreur chargement manifest:', e);
   }
 }
 
-backgroundMusicInput?.addEventListener('change', (e) => {
-  const files = Array.from(e.target.files || []);
-  if (files.length === 0) return;
-
-  files.forEach((file) => {
-    const url = URL.createObjectURL(file);
-    musicLibrary.push({ name: file.name, url, audio: null });
-  });
-
-  renderMusicLibrary();
-  if (currentMusicIndex === -1 && musicLibrary.length > 0) selectMusic(0);
-});
-
+// -----------------------
+// Gestion du cycle respiratoire
+// -----------------------
 function startInhale() {
   currentPhase = 'inhale';
   breathingCircle.className = 'breathing-circle inhale';
   breathText.textContent = 'Inspirez';
   breathText.classList.add('visible');
 
+  // Jouer le son d'inspiration synchronisé avec le rythme
   playBreathSound('inhale');
   breathCount++;
   breathCountDisplay.textContent = String(breathCount);
@@ -698,6 +618,7 @@ function startExhale() {
   breathingCircle.className = 'breathing-circle exhale';
   breathText.textContent = 'Expirez';
 
+  // Jouer le son d'expiration synchronisé avec le rythme
   playBreathSound('exhale');
   cycleCount++;
   cycleCountDisplay.textContent = String(cycleCount);
@@ -720,13 +641,21 @@ function showEndScreen(title, message) {
 async function startSession() {
   if (isRunning) return;
 
+  console.log('🚀 Démarrage de la session...');
+
   if (endScreenEl) {
     endScreenEl.classList.remove('show');
     endScreenEl.setAttribute('aria-hidden', 'true');
   }
   document.body.classList.remove('modal-open');
 
-  unlockBreathingAudio();
+  // Déverrouillage des sons de respiration
+  try {
+    unlockBreathingAudio();
+    console.log('✅ Sons de respiration déverrouillés');
+  } catch (e) {
+    console.error('❌ Erreur déverrouillage sons:', e);
+  }
 
   isRunning = true;
   breathingZone.classList.add('active');
@@ -744,12 +673,19 @@ async function startSession() {
   timerDisplay.textContent = formatTime(totalTime);
   updateProgress();
 
+  console.log(`⏱️ Session de ${totalTime}s démarrée`);
+
+  // Wake Lock pour éviter la mise en veille de l'écran
   if ('wakeLock' in navigator) {
     try {
       wakeLock = await navigator.wakeLock.request('screen');
-    } catch (_) {}
+      console.log('🔒 Wake Lock activé');
+    } catch (e) {
+      console.log('⚠️ Wake Lock non disponible:', e.message);
+    }
   }
 
+  // Audio silencieux pour maintenir l'audio actif sur iOS
   if (!silentAudio) {
     const silentWav = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
     silentAudio = new Audio(silentWav);
@@ -758,14 +694,23 @@ async function startSession() {
   }
   silentAudio.play().catch(() => {});
 
+  // Démarrage de la musique d'ambiance
   if (backgroundAudio) {
-    backgroundAudio.loop = true;
-    setMusicVolumeFromUI(backgroundAudio, musicVolumeSlider);
-    setupBackgroundMusicAudioGraph(backgroundAudio, musicVolumeSlider);
-    backgroundAudio.play().catch(() => {});
-    if (musicVolumeControl) musicVolumeControl.style.display = 'flex';
+    try {
+      backgroundAudio.loop = true;
+      setMusicVolumeFromUI(backgroundAudio, musicVolumeSlider);
+      setupBackgroundMusicAudioGraph(backgroundAudio, musicVolumeSlider);
+      await backgroundAudio.play();
+      console.log('🎵 Musique d\'ambiance démarrée');
+      if (musicVolumeControl) musicVolumeControl.style.display = 'flex';
+    } catch (e) {
+      console.warn('⚠️ Musique non disponible:', e.message);
+    }
+  } else {
+    console.log('ℹ️ Pas de musique d\'ambiance');
   }
 
+  // Timer de session
   sessionTimer = setInterval(() => {
     elapsedTime++;
     updateProgress();
@@ -774,6 +719,8 @@ async function startSession() {
     }
   }, 1000);
 
+  console.log('💨 Démarrage du cycle respiratoire');
+  // Démarrage du cycle respiratoire
   startInhale();
 }
 
@@ -791,9 +738,11 @@ async function stopSession(completed = false) {
   startBtn.style.display = 'block';
   stopBtn.style.display = 'none';
 
+  // Arrêt des sons de respiration
   try { inhaleAudio?.pause(); } catch (_) {}
   try { exhaleAudio?.pause(); } catch (_) {}
 
+  // Fondu de fin pour la musique (5 secondes)
   if (completed) {
     await fadeOutMusicAndStop(backgroundAudio, musicVolumeSlider, 5000);
   } else {
@@ -802,15 +751,18 @@ async function stopSession(completed = false) {
     }
   }
 
+  // Arrêt de l'audio silencieux
   if (silentAudio) {
     try { silentAudio.pause(); } catch (_) {}
   }
 
+  // Libération du Wake Lock
   if (wakeLock) {
     try { await wakeLock.release(); } catch (_) {}
     wakeLock = null;
   }
 
+  // Sauvegarde de l'historique si la session est terminée
   if (completed) {
     addCompletedSessionToHistory({
       endedAt: new Date().toISOString(),
@@ -827,8 +779,22 @@ async function stopSession(completed = false) {
   breathText.classList.remove('visible');
 }
 
-startBtn.addEventListener('click', startSession);
-stopBtn.addEventListener('click', () => stopSession(false));
+// -----------------------
+// Event Listeners
+// -----------------------
+console.log('📌 Installation des event listeners...');
+
+startBtn.addEventListener('click', () => {
+  console.log('🖱️ Clic sur le bouton Commencer');
+  startSession();
+});
+
+stopBtn.addEventListener('click', () => {
+  console.log('🖱️ Clic sur le bouton Arrêter');
+  stopSession(false);
+});
+
+console.log('✅ Event listeners installés');
 
 endScreenCloseBtn?.addEventListener('click', () => {
   if (endScreenEl) {
@@ -841,9 +807,7 @@ endScreenCloseBtn?.addEventListener('click', () => {
 historyBtn?.addEventListener('click', toggleHistory);
 historyCloseBtn?.addEventListener('click', closeHistory);
 historyResetBtn?.addEventListener('click', () => {
-  const ok = confirm('Effacer tout l’historique ?
-
-Cette action est irréversible.');
+  const ok = confirm('Effacer tout l'historique ?\n\nCette action est irréversible.');
   if (!ok) return;
   clearSessionHistory();
   renderHistory();
@@ -875,7 +839,13 @@ function loadSavedPreferences() {
   updateSliderBackground(musicVolumeSlider, musicVolumeSlider.value);
 }
 
+// -----------------------
+// Initialisation
+// -----------------------
+console.log('🚀 Initialisation de l\'application Cohérence Cardiaque...');
 loadSavedPreferences();
+console.log('✅ Préférences chargées');
 loadBundledAudioManifest();
 updateBreathingDurations();
 timerDisplay.textContent = formatTime(parseInt(sessionDurationInput.value, 10) * 60);
+console.log('✅ Application initialisée');
