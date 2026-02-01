@@ -332,42 +332,44 @@ async function loadBundledAudioManifest() {
         // 🎯 Pré-sélection automatique des sons par défaut après chargement du manifest
         const savedInhale = localStorage.getItem(STORAGE_KEYS.INHALE_SOUND);
         const savedExhale = localStorage.getItem(STORAGE_KEYS.EXHALE_SOUND);
-        
+
         console.log('🔍 Préférence inspiration sauvegardée:', savedInhale);
         console.log('🔍 Préférence expiration sauvegardée:', savedExhale);
-        
-        // Si aucun son d'inspiration sauvegardé ou "none", utiliser cloche.mp3
-        if (!savedInhale || savedInhale === 'none' || savedInhale === 'bell1') {
-            const inhaleOption = inhaleSoundSelect.querySelector('option[value="file-inhale:cloche.mp3"]');
-            if (inhaleOption) {
-                inhaleSoundSelect.value = 'file-inhale:cloche.mp3';
-                localStorage.setItem(STORAGE_KEYS.INHALE_SOUND, 'file-inhale:cloche.mp3');
-                console.log('✅ Son d\'inspiration par défaut: cloche.mp3');
-            } else {
-                console.log('❌ Option cloche.mp3 non trouvée dans le select');
-            }
-        } else {
-            // Restaurer la préférence sauvegardée
-            console.log('♻️ Restauration préférence inspiration:', savedInhale);
-            inhaleSoundSelect.value = savedInhale;
+
+        // Sélection robuste: préfère .m4a si présent, sinon .mp3
+        function selectDefaultSound(selectEl, baseName, prefix) {
+            const m4a = selectEl.querySelector(`option[value="${prefix}:${baseName}.m4a"]`);
+            if (m4a) return `${prefix}:${baseName}.m4a`;
+            const mp3 = selectEl.querySelector(`option[value="${prefix}:${baseName}.mp3"]`);
+            if (mp3) return `${prefix}:${baseName}.mp3`;
+            return null;
         }
-        
-        // Si aucun son d'expiration sauvegardé ou "none", utiliser bol.mp3
-        if (!savedExhale || savedExhale === 'none' || savedExhale === 'bell1') {
-            const exhaleOption = exhaleSoundSelect.querySelector('option[value="file-exhale:bol.mp3"]');
-            if (exhaleOption) {
-                exhaleSoundSelect.value = 'file-exhale:bol.mp3';
-                localStorage.setItem(STORAGE_KEYS.EXHALE_SOUND, 'file-exhale:bol.mp3');
-                console.log('✅ Son d\'expiration par défaut: bol.mp3');
-            } else {
-                console.log('❌ Option bol.mp3 non trouvée dans le select');
+
+        function restoreOrDefault(selectEl, savedValue, baseName, prefix, storageKey) {
+            // Si une préférence existe ET correspond à une option disponible, on la restaure
+            if (savedValue && savedValue !== 'none' && savedValue !== 'bell1') {
+                const opt = selectEl.querySelector(`option[value="${savedValue}"]`);
+                if (opt) {
+                    selectEl.value = savedValue;
+                    console.log('♻️ Restauration préférence:', savedValue);
+                    return;
+                }
             }
-        } else {
-            // Restaurer la préférence sauvegardée
-            console.log('♻️ Restauration préférence expiration:', savedExhale);
-            exhaleSoundSelect.value = savedExhale;
+
+            // Sinon, on prend le défaut (m4a -> mp3)
+            const def = selectDefaultSound(selectEl, baseName, prefix);
+            if (def) {
+                selectEl.value = def;
+                localStorage.setItem(storageKey, def);
+                console.log('✅ Son par défaut:', def);
+            } else {
+                console.log(`❌ Option par défaut introuvable: ${prefix}:${baseName}(.m4a/.mp3)`);
+            }
         }
-        
+
+        restoreOrDefault(inhaleSoundSelect, savedInhale, 'cloche', 'file-inhale', STORAGE_KEYS.INHALE_SOUND);
+        restoreOrDefault(exhaleSoundSelect, savedExhale, 'bol', 'file-exhale', STORAGE_KEYS.EXHALE_SOUND);
+
         console.log('📊 Valeur finale select inspiration:', inhaleSoundSelect.value);
         console.log('📊 Valeur finale select expiration:', exhaleSoundSelect.value);
         
