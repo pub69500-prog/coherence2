@@ -786,7 +786,7 @@ backgroundMusicInput.addEventListener('change', (e) => {
         });
         
 // renderMusicLibrary(); // Désactivé : on garde uniquement le menu déroulant
-document.getElementById('musicLibrary').style.display = 'none';
+document.getElementById('musicList').style.display = 'none';
 
         // Auto-select first music if none selected
         if (currentMusicIndex === -1 && musicLibrary.length > 0) {
@@ -856,7 +856,7 @@ window.selectMusic = function(index) {
     musicVolumeControl.style.display = 'flex';
     
     // renderMusicLibrary(); // Désactivé : on garde uniquement le menu déroulant
-document.getElementById('musicLibrary').style.display = 'none';
+document.getElementById('musicList').style.display = 'none';
 
     // Auto-play if session is running
     if (isRunning) {
@@ -892,13 +892,15 @@ window.removeMusic = function(index) {
         currentMusicIndex--;
     }
     
-    // Hide library if empty
-    if (musicLibrary.length === 0) {
-        document.getElementById('musicLibrary').style.display = 'none';
-    }
-    
-    renderMusicLibrary();
-};
+// Hide library if empty
+if (musicLibrary.length === 0) {
+    document.getElementById('musicLibrary').style.display = 'none';
+} else {
+    // On garde le menu déroulant mais on cache la liste en dessous
+    document.getElementById('musicList').style.display = 'none';
+    document.getElementById('musicLibrary').style.display = 'block';
+}
+// renderMusicLibrary(); // Désactivé : on ne veut plus afficher la liste
 
 // Lecture des sons inhale/exhale
 // Contournement fiable : pool d'instances Audio (évite les ratés "pause + seek + play" sur le même élément).
@@ -1363,7 +1365,7 @@ musicVolumeSlider.addEventListener('change', (e) => savePreference(STORAGE_KEYS.
 // Initialize - Charger les préférences sauvegardées
 loadSavedPreferences();
 loadBundledAudioManifest();
-document.getElementById('musicLibrary').style.display = 'none';
+document.getElementById('musicList').style.display = 'none';
 updateBreathingDurations();
 timerDisplay.textContent = formatTime(parseInt(sessionDurationInput.value) * 60);
 
