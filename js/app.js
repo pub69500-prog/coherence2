@@ -283,7 +283,7 @@ async function loadBundledAudioManifest() {
         const data = await res.json();
 
         // Ajout des sons inhale/exhale (uniquement wav + mp3)
-        const isAllowedSfx = (name) => /\.(wav|mp3)$/i.test(name || '');
+        const isAllowedSfx = (name) => /\.(wav|mp3|m4a)$/i.test(name || '');
 
         const resetSelectToFirstOption = (selectEl) => {
             if (!selectEl) return;
@@ -482,7 +482,7 @@ function preloadBreathSounds() {
             inhale: { src: null, pool: [], idx: 0 },
             exhale: { src: null, pool: [], idx: 0 }
         };
-        const SFX_POOL_SIZE = 4; // 3-5 suffit généralement, 4 = bon compromis
+        const SFX_POOL_SIZE = 5; // plus robuste sur Safari
         // Cached bundled sounds from /sounds folders (loaded via manifest)
         const bundledSoundCache = { inhale: new Map(), exhale: new Map() };
         let customExhaleAudio = null;
@@ -627,31 +627,55 @@ function preloadBreathSounds() {
 
 
         // ============================
-        // SFX (inhale/exhale) : contournement fiable des ratés aléatoires
-        // ============================
-        function buildSfxSrc(phase) {
+        // SFX (inhale/exhale) : contournement fiable des ratés aléatoires + Safari m4a-first
+        // Objectif :
+        // - Utiliser un pool d'instances <audio> (évite pause+seek+play sur le même élément)
+        // - Sur Safari, préférer .m4a (AAC) si disponible
+        // - Si .m4a échoue, fallback immédiat sur .mp3
+
+        function canPlayM4A() {
+            try {
+                const a = document.createElement('audio');
+                return !!a.canPlayType && a.canPlayType('audio/mp4; codecs="mp4a.40.2"') !== '';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Retourne [preferredSrc, fallbackSrc]
+        function buildSfxSrcPair(phase) {
             const soundType = (phase === 'inhale') ? inhaleSoundSelect.value : exhaleSoundSelect.value;
-            if (!soundType || soundType === 'none') return null;
+            if (!soundType || soundType === 'none') return [null, null];
 
             if (soundType.startsWith('custom-')) {
                 const base = (phase === 'inhale') ? customInhaleAudio : customExhaleAudio;
-                return (base && base.src) ? base.src : null;
+                const src = (base && base.src) ? base.src : null;
+                return [src, null];
             }
 
             if (soundType.startsWith('file-inhale:') || soundType.startsWith('file-exhale:')) {
                 const fileName = soundType.split(':').slice(1).join(':');
                 const folder = (phase === 'inhale') ? 'inhale' : 'exhale';
-                return `./sounds/${folder}/${encodeURIComponent(fileName)}`;
+                const src = `./sounds/${folder}/${encodeURIComponent(fileName)}`;
+
+                const lower = src.toLowerCase();
+                if (canPlayM4A() && lower.endsWith('.mp3')) {
+                    return [src.slice(0, -4) + '.m4a', src];
+                }
+                return [src, null];
             }
 
-            return null;
+            return [null, null];
+        }
+
+        function buildSfxSrc(phase) {
+            return buildSfxSrcPair(phase)[0];
         }
 
         function ensureSfxPool(phase, src) {
             const p = sfxPools[phase];
             if (!p) return;
 
-            // Si la source change, on reconstruit un pool propre
             if (!src) {
                 p.src = null;
                 p.pool = [];
@@ -668,23 +692,22 @@ function preloadBreathSounds() {
             for (let i = 0; i < SFX_POOL_SIZE; i++) {
                 const a = new Audio();
                 a.preload = 'auto';
+                a.playsInline = true;
                 a.src = src;
-                // Charge le plus tôt possible (sans jouer)
                 try { a.load(); } catch (e) {}
                 p.pool.push(a);
             }
         }
 
-        // À appeler *sur un geste utilisateur* (bouton Start) pour éviter les blocages + améliorer la fiabilité
+        // À appeler *sur un geste utilisateur* (bouton Start)
         function warmupSfxPools() {
             try {
-                const inhaleSrc = buildSfxSrc('inhale');
-                const exhaleSrc = buildSfxSrc('exhale');
+                const [inhaleSrc] = buildSfxSrcPair('inhale');
+                const [exhaleSrc] = buildSfxSrcPair('exhale');
                 ensureSfxPool('inhale', inhaleSrc);
                 ensureSfxPool('exhale', exhaleSrc);
 
-                // Petit "prime" silencieux : certains navigateurs stabilisent la lecture après un 1er play()
-                // Volume à 0 pour éviter tout son.
+                // Petit "prime" silencieux
                 for (const phase of ['inhale', 'exhale']) {
                     const p = sfxPools[phase];
                     if (!p || !p.pool.length) continue;
@@ -697,7 +720,6 @@ function preloadBreathSounds() {
                             try { a.pause(); a.currentTime = 0; } catch (e) {}
                             a.volume = prevVol;
                         }).catch(() => {
-                            // Si refusé, ce n'est pas grave : le vrai play() sera retenté au moment opportun
                             try { a.pause(); a.currentTime = 0; } catch (e) {}
                             a.volume = prevVol;
                         });
@@ -711,204 +733,93 @@ function preloadBreathSounds() {
             }
         }
 
-        customInhaleFile.addEventListener('change', (e) => {
-            if (e.target.files[0]) {
-                if (customInhaleAudio) {
-                    URL.revokeObjectURL(customInhaleAudio.src);
-                }
-                customInhaleAudio = new Audio(URL.createObjectURL(e.target.files[0]));
-                customInhaleAudio.preload = 'auto';
-                customInhaleAudio.load();
-                document.getElementById('customInhaleName').textContent = e.target.files[0].name;
-            }
-        });
+        // 🔊 Fonction de préchargement des sons de respiration
+        function preloadBreathSounds() {
+            console.log('🔄 Préchargement des sons de respiration...');
 
-        customExhaleFile.addEventListener('change', (e) => {
-            if (e.target.files[0]) {
-                if (customExhaleAudio) {
-                    URL.revokeObjectURL(customExhaleAudio.src);
-                }
-                customExhaleAudio = new Audio(URL.createObjectURL(e.target.files[0]));
-                customExhaleAudio.preload = 'auto';
-                customExhaleAudio.load();
-                document.getElementById('customExhaleName').textContent = e.target.files[0].name;
-            }
-        });
-
-        backgroundMusicInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                // Add all selected files to the library
-                Array.from(e.target.files).forEach(file => {
-                    const musicObj = {
-                        name: file.name,
-                        file: file,
-                        url: URL.createObjectURL(file),
-                        audio: null
-                    };
-                    musicLibrary.push(musicObj);
-                });
-                
-                renderMusicLibrary();
-                document.getElementById('musicLibrary').style.display = 'block';
-                
-                // Auto-select first music if none selected
-                if (currentMusicIndex === -1 && musicLibrary.length > 0) {
-                    selectMusic(0);
+            // Inhale
+            const inhaleValue = inhaleSoundSelect.value;
+            if (inhaleValue && inhaleValue !== 'none' && inhaleValue.startsWith('file-inhale:')) {
+                const fileName = inhaleValue.split(':').slice(1).join(':');
+                const [src] = buildSfxSrcPair('inhale');
+                if (src) {
+                    const audio = new Audio();
+                    audio.preload = 'auto';
+                    audio.playsInline = true;
+                    audio.src = src;
+                    try { audio.load(); } catch (e) {}
+                    currentSfxAudio.inhale = audio;
+                    console.log('✅ Son d'inspiration préchargé:', fileName, '→', src);
                 }
             }
-        });
 
-        function renderMusicLibrary() {
-            const musicList = document.getElementById('musicList');
-            musicList.innerHTML = '';
-            
-            musicLibrary.forEach((music, index) => {
-                const musicItem = document.createElement('div');
-                musicItem.className = 'music-item';
-                if (index === currentMusicIndex) {
-                    musicItem.classList.add('active');
-                    if (backgroundAudio && !backgroundAudio.paused) {
-                        musicItem.classList.add('playing');
-                    }
+            // Exhale
+            const exhaleValue = exhaleSoundSelect.value;
+            if (exhaleValue && exhaleValue !== 'none' && exhaleValue.startsWith('file-exhale:')) {
+                const fileName = exhaleValue.split(':').slice(1).join(':');
+                const [src] = buildSfxSrcPair('exhale');
+                if (src) {
+                    const audio = new Audio();
+                    audio.preload = 'auto';
+                    audio.playsInline = true;
+                    audio.src = src;
+                    try { audio.load(); } catch (e) {}
+                    currentSfxAudio.exhale = audio;
+                    console.log('✅ Son d'expiration préchargé:', fileName, '→', src);
                 }
-                
-                musicItem.innerHTML = `
-                    <span class="music-name" title="${music.name}">${music.name}</span>
-                    <div class="music-controls">
-                        <button class="music-btn" onclick="selectMusic(${index})" title="Sélectionner">▶</button>
-                        <button class="music-btn" onclick="removeMusic(${index})" title="Supprimer">✕</button>
-                    </div>
-                `;
-                
-                musicList.appendChild(musicItem);
-            });
+            }
         }
 
-        window.selectMusic = function(index) {
-            if (index < 0 || index >= musicLibrary.length) return;
-            
-            // Stop current music
-            if (backgroundAudio) {
-                // On ne fait pas de fondu ici : juste arrêt immédiat lors du changement de morceau.
-                // (Le fondu est géré à la fin de la séance.)
-                try {
-                    backgroundAudio.pause();
-                    backgroundAudio.currentTime = 0;
-                } catch (e) {
-                    console.warn('Impossible d\'arrêter la musique courante:', e);
-                }
-            }
-            
-            currentMusicIndex = index;
-            const selectedMusic = musicLibrary[index];
-            
-            // Create or reuse audio element
-            if (!selectedMusic.audio) {
-                selectedMusic.audio = new Audio(selectedMusic.url);
-                selectedMusic.audio.loop = true;
-                selectedMusic.audio.volume = parseInt(musicVolumeSlider.value) / 100;
-                selectedMusic.audio.preload = 'auto';
-                selectedMusic.audio.load();
-            }
-            
-            backgroundAudio = selectedMusic.audio;
-            setupBackgroundMusicAudioGraph();
-            setMusicVolumeFromUI();
-            
-            document.getElementById('musicFileName').textContent = `Sélectionnée: ${selectedMusic.name}`;
-            musicVolumeControl.style.display = 'flex';
-            
-            renderMusicLibrary();
-            
-            // Auto-play if session is running
-            if (isRunning) {
-                const playPromise = backgroundAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => console.log('Music play prevented:', e));
-                }
-            }
-        };
-
-        window.removeMusic = function(index) {
-            if (index < 0 || index >= musicLibrary.length) return;
-            
-            // Stop and cleanup if this is the current music
-            if (index === currentMusicIndex) {
-                if (backgroundAudio) {
-                    backgroundAudio.pause();
-                }
-                backgroundAudio = null;
-                currentMusicIndex = -1;
-                document.getElementById('musicFileName').textContent = '';
-                musicVolumeControl.style.display = 'none';
-            }
-            
-            // Revoke URL to free memory
-            URL.revokeObjectURL(musicLibrary[index].url);
-            
-            // Remove from library
-            musicLibrary.splice(index, 1);
-            
-            // Adjust current index if needed
-            if (currentMusicIndex > index) {
-                currentMusicIndex--;
-            }
-            
-            // Hide library if empty
-            if (musicLibrary.length === 0) {
-                document.getElementById('musicLibrary').style.display = 'none';
-            }
-            
-            renderMusicLibrary();
-        };
-
-        // Lecture des sons inhale/exhale
-        // Contournement fiable : pool d'instances Audio (évite les ratés "pause + seek + play" sur le même élément).
+        // Lecture des sons inhale/exhale : pool + fallback m4a→mp3
         function playSound(phase) {
             const volume = (phase === 'inhale') ? parseInt(inhaleVolumeSlider.value, 10) : parseInt(exhaleVolumeSlider.value, 10);
             const vol = Math.max(0, Math.min(1, volume / 100));
 
-            const src = buildSfxSrc(phase);
-            if (!src) return;
+            const [preferredSrc, fallbackSrc] = buildSfxSrcPair(phase);
+            if (!preferredSrc) return;
 
-            ensureSfxPool(phase, src);
-            const p = sfxPools[phase];
-            if (!p || !p.pool.length) return;
+            const attemptWithSrc = (src, label) => {
+                ensureSfxPool(phase, src);
+                const p = sfxPools[phase];
+                if (!p || !p.pool.length) return Promise.reject(new Error('pool empty'));
 
-            // Prend une instance différente à chaque déclenchement
-            const audio = p.pool[p.idx];
-            p.idx = (p.idx + 1) % p.pool.length;
-            currentSfxAudio[phase] = audio;
+                const audio = p.pool[p.idx];
+                p.idx = (p.idx + 1) % p.pool.length;
+                currentSfxAudio[phase] = audio;
 
-            try {
-                audio.pause();
-                // Sur certains navigateurs, le seek à 0 peut échouer si pas encore prêt
-                try { audio.currentTime = 0; } catch (e) {}
-                audio.volume = vol;
-            } catch (e) {
-                console.log(`⚠️ Erreur préparation son ${phase}:`, e);
-            }
+                try {
+                    audio.pause();
+                    try { audio.currentTime = 0; } catch (e) {}
+                    audio.volume = vol;
+                } catch (e) {}
 
-            const playPromise = audio.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(e => {
-                    // Fallback : si une instance du pool refuse de jouer (rare), on tente une instance fraîche.
-                    console.log(`❌ Lecture refusée (${phase}) → fallback:`, e && (e.name || e.message) ? `${e.name || ''} ${e.message || ''}` : e);
+                const pr = audio.play();
+                if (pr && typeof pr.then === 'function') {
+                    return pr.catch((e) => {
+                        console.log(`❌ Lecture refusée (${phase}/${label})`, e && (e.name || e.message) ? `${e.name || ''} ${e.message || ''}` : e);
+                        throw e;
+                    });
+                }
+                return Promise.resolve();
+            };
 
-                    if (audioContext && audioContext.state === 'suspended') {
-                        try { audioContext.resume(); } catch (_) {}
-                    }
-
-                    try {
-                        const fresh = new Audio(src);
-                        fresh.preload = 'auto';
-                        fresh.volume = vol;
-                        currentSfxAudio[phase] = fresh;
-                        fresh.play().catch(() => {});
-                    } catch (_) {}
+            attemptWithSrc(preferredSrc, 'preferred')
+                .catch(() => {
+                    if (!fallbackSrc) return;
+                    return attemptWithSrc(fallbackSrc, 'fallback').catch(() => {
+                        // Dernier recours : instance fresh
+                        try {
+                            const fresh = new Audio(fallbackSrc);
+                            fresh.preload = 'auto';
+                            fresh.playsInline = true;
+                            fresh.volume = vol;
+                            currentSfxAudio[phase] = fresh;
+                            fresh.play().catch(() => {});
+                        } catch (_) {}
+                    });
                 });
-            }
         }
+
 
         function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);

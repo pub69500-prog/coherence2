@@ -1,9 +1,11 @@
 {
   "inhale": [
-    "cloche.mp3"
+    "cloche.mp3",
+    "cloche.m4a"
   ],
   "exhale": [
-    "bol.mp3"
+    "bol.mp3",
+    "bol.m4a"
   ],
   "music": [
     "Music1.mp3"
