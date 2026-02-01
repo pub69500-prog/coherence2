@@ -310,37 +310,44 @@ async function loadBundledAudioManifest() {
         addFileOptions(inhaleSoundSelect, data.inhale, 'file-inhale');
         addFileOptions(exhaleSoundSelect, data.exhale, 'file-exhale');
 
-        // Ajout des musiques (prêtes à sélectionner sans upload)
-        if (Array.isArray(data.music) && data.music.length > 0) {
-            const musicSelect = document.getElementById('musicSelect');
+      // Ajout des musiques (prêtes à sélectionner sans upload)
+if (Array.isArray(data.music) && data.music.length > 0) {
+    const musicSelect = document.getElementById('musicSelect');
 
-            // reset du select
-            if (musicSelect) {
-                while (musicSelect.options.length > 1) {
-                    musicSelect.remove(1);
-                }
-            }
+    data.music.forEach((fileName, index) => {
+        const url = `./music/${encodeURIComponent(fileName)}`;
 
-            data.music.forEach((fileName, index) => {
-                const url = `./music/${encodeURIComponent(fileName)}`;
-
-                // bibliothèque interne (déjà utilisée par ton code)
-                if (!musicLibrary.some(m => m.name === fileName)) {
-                    musicLibrary.push({ name: fileName, file: null, url, audio: null });
-                }
-
-                // menu déroulant
-                if (musicSelect) {
-                    const opt = document.createElement('option');
-                    opt.value = fileName;
-                    opt.textContent = fileName;
-                    musicSelect.appendChild(opt);
-                }
-            });
-
-            renderMusicLibrary();
-            document.getElementById('musicLibrary').style.display = 'block';
+        // bibliothèque interne (déjà utilisée par ton code)
+        if (!musicLibrary.some(m => m.name === fileName)) {
+            musicLibrary.push({ name: fileName, file: null, url, audio: null });
         }
+
+        // menu déroulant - Ajouter TOUTES les options
+        if (musicSelect) {
+            // Vérifie si l'option n'existe pas déjà
+            const existingOption = Array.from(musicSelect.options).find(opt => opt.value === fileName);
+            if (!existingOption) {
+                const opt = document.createElement('option');
+                opt.value = fileName;
+                opt.textContent = fileName;
+                musicSelect.appendChild(opt);
+            }
+        }
+    });
+
+    renderMusicLibrary();
+    document.getElementById('musicLibrary').style.display = 'block';
+}
+```
+
+Le problème était le `reset du select` qui supprimait les options au lieu de juste vérifier les doublons.
+
+Recharge la page et le menu déroulant devrait maintenant afficher :
+```
+— Sélectionner —
+Music1.mp3
+Music2.mp3
+Music3.mp3
 
         // 🎯 Pré-sélection / restauration robuste des sons après chargement du manifest
         // - Ignore les valeurs invalides / "none"
