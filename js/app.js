@@ -338,8 +338,10 @@ async function loadBundledAudioManifest() {
                 }
             });
 
-            renderMusicLibrary();
-            document.getElementById('musicLibrary').style.display = 'none';
+            // renderMusicLibrary(); // désactivé : on ne veut plus afficher la liste
+document.getElementById('musicList').style.display = 'none';
+document.getElementById('musicLibrary').style.display = 'block';
+
         }
 
         // 🎯 Pré-sélection / restauration robuste des sons après chargement du manifest
@@ -892,23 +894,7 @@ window.removeMusic = function(index) {
         currentMusicIndex--;
     }
     
-// Hide library if empty
-if (musicLibrary.length === 0) {
-    document.getElementById('musicLibrary').style.display = 'none';
-} else {
-    // On garde le menu déroulant mais on cache la liste en dessous
-    document.getElementById('musicList').style.display = 'none';
-    document.getElementById('musicLibrary').style.display = 'block';
-}
-// renderMusicLibrary(); // Désactivé : on ne veut plus afficher la liste
-
-// Lecture des sons inhale/exhale
-// Contournement fiable : pool d'instances Audio (évite les ratés "pause + seek + play" sur le même élément).
-function playSound(phase) {
-    const volume = (phase === 'inhale') ? parseInt(inhaleVolumeSlider.value, 10) : parseInt(exhaleVolumeSlider.value, 10);
-    const vol = Math.max(0, Math.min(1, volume / 100));
-
-    const src = buildSfxSrc(phase);
+document.getElementById('musicList').style.display = 'none';
     if (!src) return;
 
     ensureSfxPool(phase, src);
