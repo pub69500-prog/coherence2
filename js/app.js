@@ -328,59 +328,81 @@ async function loadBundledAudioManifest() {
                 selectMusic(0);
             }
         }
-
         // 🎯 Pré-sélection / restauration robuste des sons après chargement du manifest
-// Problème classique : un ancien localStorage peut contenir "none" ou une valeur qui n'existe plus,
-// ce qui force les <select> sur "Aucun". Ici, on ignore toute valeur invalide et on force un défaut valide.
-function restoreOrSelectDefault(selectEl, storageKey, baseName, prefix) {
-    const saved = localStorage.getItem(storageKey);
+        // - Ignore les valeurs invalides / "none"
+        // - Force un défaut valide
+        // - ✅ Upgrade automatique mp3 → m4a si disponible
+        function restoreOrSelectDefault(selectEl, storageKey, baseName, prefix) {
+            const saved = localStorage.getItem(storageKey);
 
-    // 1) Si une valeur sauvegardée existe ET correspond à une option réelle, on la restaure.
-    if (saved && saved !== 'none') {
-        const opt = selectEl.querySelector(`option[value="${saved}"]`);
-        if (opt) {
-            selectEl.value = saved;
-            return saved;
+            const m4aValue = `${prefix}:${baseName}.m4a`;
+            const mp3Value = `${prefix}:${baseName}.mp3`;
+
+            // 1) Si une valeur sauvegardée existe
+            if (saved && saved !== 'none') {
+                // ✅ Si c'est un mp3 et que le m4a correspondant existe, on bascule en m4a
+                if (saved === mp3Value) {
+                    const m4aOpt = selectEl.querySelector(`option[value="${m4aValue}"]`);
+                    if (m4aOpt) {
+                        selectEl.value = m4aValue;
+                        try { localStorage.setItem(storageKey, m4aValue); } catch (e) {}
+                        return m4aValue;
+                    }
+                }
+
+                // Sinon, on restaure seulement si l'option existe vraiment
+                const opt = selectEl.querySelector(`option[value="${saved}"]`);
+                if (opt) {
+                    selectEl.value = saved;
+                    return saved;
+                }
+            }
+
+            // 2) Sinon, on force un défaut valide : m4a en priorité, puis mp3
+            const m4aOpt = selectEl.querySelector(`option[value="${m4aValue}"]`);
+            if (m4aOpt) {
+                selectEl.value = m4aValue;
+                try { localStorage.setItem(storageKey, m4aValue); } catch (e) {}
+                return m4aValue;
+            }
+
+            const mp3Opt = selectEl.querySelector(`option[value="${mp3Value}"]`);
+            if (mp3Opt) {
+                selectEl.value = mp3Value;
+                try { localStorage.setItem(storageKey, mp3Value); } catch (e) {}
+                return mp3Value;
+            }
+
+            // 3) Dernier recours : aucun (et on nettoie la préférence)
+            selectEl.value = 'none';
+            try { localStorage.removeItem(storageKey); } catch (e) {}
+            return null;
         }
-    }
 
-    // 2) Sinon, on force un défaut valide : m4a en priorité, puis mp3.
-    const m4aValue = `${prefix}:${baseName}.m4a`;
-    const mp3Value = `${prefix}:${baseName}.mp3`;
+        const inhalePicked = restoreOrSelectDefault(
+            inhaleSoundSelect,
+            STORAGE_KEYS.INHALE_SOUND,
+            'cloche',
+            'file-inhale'
+        );
+        const exhalePicked = restoreOrSelectDefault(
+            exhaleSoundSelect,
+            STORAGE_KEYS.EXHALE_SOUND,
+            'bol',
+            'file-exhale'
+        );
 
-    const m4aOpt = selectEl.querySelector(`option[value="${m4aValue}"]`);
-    if (m4aOpt) {
-        selectEl.value = m4aValue;
-        localStorage.setItem(storageKey, m4aValue);
-        return m4aValue;
-    }
+        console.log('✅ Son inspiration sélectionné:', inhalePicked || inhaleSoundSelect.value);
+        console.log('✅ Son expiration sélectionné:', exhalePicked || exhaleSoundSelect.value);
 
-    const mp3Opt = selectEl.querySelector(`option[value="${mp3Value}"]`);
-    if (mp3Opt) {
-        selectEl.value = mp3Value;
-        localStorage.setItem(storageKey, mp3Value);
-        return mp3Value;
-    }
-
-    // 3) Dernier recours : aucun (et on nettoie la préférence)
-    selectEl.value = 'none';
-    try { localStorage.removeItem(storageKey); } catch (e) {}
-    return null;
-}
-
-const inhalePicked = restoreOrSelectDefault(inhaleSoundSelect, STORAGE_KEYS.INHALE_SOUND, 'cloche', 'file-inhale');
-const exhalePicked = restoreOrSelectDefault(exhaleSoundSelect, STORAGE_KEYS.EXHALE_SOUND, 'bol', 'file-exhale');
-
-console.log('✅ Son inspiration sélectionné:', inhalePicked || inhaleSoundSelect.value);
-console.log('✅ Son expiration sélectionné:', exhalePicked || exhaleSoundSelect.value);
-
-// 🔊 Préchargement des sons pour améliorer la réactivité sur iOS
-preloadBreathSounds();
+        // 🔊 Préchargement des sons pour améliorer la réactivité sur iOS
+        preloadBreathSounds();
     } catch (e) {
         // Silencieux: le manifest est optionnel
         console.log('Manifest audio non chargé (optionnel):', e.message);
     }
 }
+
 
 // 🔊 Fonction de préchargement des sons de respiration
 function preloadBreathSounds() {
