@@ -338,7 +338,6 @@ async function loadBundledAudioManifest() {
                 }
             });
 
-            // renderMusicLibrary(); // désactivé : on ne veut plus afficher la liste
 document.getElementById('musicList').style.display = 'none';
 document.getElementById('musicLibrary').style.display = 'block';
 
@@ -787,7 +786,6 @@ backgroundMusicInput.addEventListener('change', (e) => {
             musicLibrary.push(musicObj);
         });
         
-// renderMusicLibrary(); // Désactivé : on garde uniquement le menu déroulant
 document.getElementById('musicList').style.display = 'none';
 
         // Auto-select first music if none selected
@@ -797,31 +795,6 @@ document.getElementById('musicList').style.display = 'none';
     }
 });
 
-function renderMusicLibrary() {
-    const musicList = document.getElementById('musicList');
-    musicList.innerHTML = '';
-    
-    musicLibrary.forEach((music, index) => {
-        const musicItem = document.createElement('div');
-        musicItem.className = 'music-item';
-        if (index === currentMusicIndex) {
-            musicItem.classList.add('active');
-            if (backgroundAudio && !backgroundAudio.paused) {
-                musicItem.classList.add('playing');
-            }
-        }
-        
-        musicItem.innerHTML = `
-            <span class="music-name" title="${music.name}">${music.name}</span>
-            <div class="music-controls">
-                <button class="music-btn" onclick="selectMusic(${index})" title="Sélectionner">▶</button>
-                <button class="music-btn" onclick="removeMusic(${index})" title="Supprimer">✕</button>
-            </div>
-        `;
-        
-        musicList.appendChild(musicItem);
-    });
-}
 
 window.selectMusic = function(index) {
     if (index < 0 || index >= musicLibrary.length) return;
@@ -857,7 +830,6 @@ window.selectMusic = function(index) {
     document.getElementById('musicFileName').textContent = `Sélectionnée: ${selectedMusic.name}`;
     musicVolumeControl.style.display = 'flex';
     
-    // renderMusicLibrary(); // Désactivé : on garde uniquement le menu déroulant
 document.getElementById('musicList').style.display = 'none';
 
     // Auto-play if session is running
@@ -1073,7 +1045,6 @@ function startSession() {
             });
         }
         // Update UI to show playing state
-        renderMusicLibrary();
     }
 
     // Start breathing
@@ -1167,7 +1138,6 @@ async function stopSession(completed = false) {
     }
     
     // Update music library display
-    renderMusicLibrary();
 }
 
 function buildHistoryTile(title, stats) {
