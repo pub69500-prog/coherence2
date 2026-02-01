@@ -339,7 +339,7 @@ async function loadBundledAudioManifest() {
             });
 
             renderMusicLibrary();
-            document.getElementById('musicLibrary').style.display = 'block';
+            document.getElementById('musicLibrary').style.display = 'none';
         }
 
         // 🎯 Pré-sélection / restauration robuste des sons après chargement du manifest
@@ -785,9 +785,9 @@ backgroundMusicInput.addEventListener('change', (e) => {
             musicLibrary.push(musicObj);
         });
         
-        renderMusicLibrary();
-        document.getElementById('musicLibrary').style.display = 'block';
-        
+// renderMusicLibrary(); // Désactivé : on garde uniquement le menu déroulant
+document.getElementById('musicLibrary').style.display = 'none';
+
         // Auto-select first music if none selected
         if (currentMusicIndex === -1 && musicLibrary.length > 0) {
             selectMusic(0);
@@ -855,8 +855,9 @@ window.selectMusic = function(index) {
     document.getElementById('musicFileName').textContent = `Sélectionnée: ${selectedMusic.name}`;
     musicVolumeControl.style.display = 'flex';
     
-    renderMusicLibrary();
-    
+    // renderMusicLibrary(); // Désactivé : on garde uniquement le menu déroulant
+document.getElementById('musicLibrary').style.display = 'none';
+
     // Auto-play if session is running
     if (isRunning) {
         const playPromise = backgroundAudio.play();
@@ -1362,6 +1363,7 @@ musicVolumeSlider.addEventListener('change', (e) => savePreference(STORAGE_KEYS.
 // Initialize - Charger les préférences sauvegardées
 loadSavedPreferences();
 loadBundledAudioManifest();
+document.getElementById('musicLibrary').style.display = 'none';
 updateBreathingDurations();
 timerDisplay.textContent = formatTime(parseInt(sessionDurationInput.value) * 60);
 
