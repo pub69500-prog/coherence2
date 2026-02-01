@@ -1,13 +1,22 @@
 {
   "inhale": [
+    "README.md",
     "cloche.m4a",
-    "cloche.mp3"
+    "cloche.mp3",
+    "exemple.txt"
   ],
   "exhale": [
+    "README.md",
     "bol.m4a",
-    "bol.mp3"
+    "bol.mp3",
+    "exemple.txt"
   ],
   "music": [
-    "Music1.mp3"
+    ".DS_Store",
+    "Music1.mp3",
+    "Music2.mp3",
+    "Music3.mp3",
+    "README.md",
+    "exemple.txt"
   ]
 }
