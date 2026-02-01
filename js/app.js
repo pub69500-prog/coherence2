@@ -919,6 +919,38 @@ function updateProgress() {
     progressFill.style.width = `${progress}%`;
     timerDisplay.textContent = formatTime(totalTime - elapsedTime);
 }
+// Lecture des sons inhale/exhale
+// Lecture des sons inhale/exhale via pool (sfxPools)
+function playSound(phase) {
+    const volume = (phase === 'inhale')
+        ? parseInt(inhaleVolumeSlider.value, 10)
+        : parseInt(exhaleVolumeSlider.value, 10);
+
+    const vol = Math.max(0, Math.min(1, volume / 100));
+
+    const src = buildSfxSrc(phase);
+    if (!src) return;
+
+    // Prépare / met à jour le pool
+    ensureSfxPool(phase, src);
+
+    const p = sfxPools[phase];
+    if (!p || !p.pool || p.pool.length === 0) return;
+
+    // Utilise l’index EXISTANT (idx)
+    const index = (typeof p.idx === 'number') ? p.idx : 0;
+    const audio = p.pool[index % p.pool.length];
+    p.idx = (index + 1) % p.pool.length;
+
+    try { audio.volume = vol; } catch (_) {}
+    try { audio.currentTime = 0; } catch (_) {}
+
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+    }
+}
+
 
 function startInhale() {
     currentPhase = 'inhale';
