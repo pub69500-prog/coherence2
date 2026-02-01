@@ -283,7 +283,7 @@ async function loadBundledAudioManifest() {
         const data = await res.json();
 
         // Ajout des sons inhale/exhale (uniquement wav + mp3)
-        const isAllowedSfx = (name) => /\.(wav|mp3)$/i.test(name || '');
+        const isAllowedSfx = (name) => /\.(wav|mp3|m4a)$/i.test(name || '');
 
         const resetSelectToFirstOption = (selectEl) => {
             if (!selectEl) return;
