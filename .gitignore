@@ -1,0 +1,33 @@
+# Audio files (optionnel - décommentez si vous ne voulez pas versionner vos fichiers audio)
+# sounds/**/*.mp3
+# sounds/**/*.wav
+# sounds/**/*.ogg
+# sounds/**/*.m4a
+# music/*.mp3
+# music/*.wav
+# music/*.ogg
+# music/*.m4a
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+.cache/

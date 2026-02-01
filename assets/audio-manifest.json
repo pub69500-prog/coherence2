@@ -1,0 +1,13 @@
+{
+  "inhale": [
+    "bol.mp3",
+    "cloche.mp3"
+  ],
+  "exhale": [
+    "bol.mp3",
+    "cloche.mp3"
+  ],
+  "music": [
+    "Music1.mp3"
+  ]
+}

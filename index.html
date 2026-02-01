@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="Cohérence Cardiaque" name="apple-mobile-web-app-title"/>
+<title>Cohérence Cardiaque</title>
+<!-- PWA Manifest -->
+<link href="manifest.json" rel="manifest"/>
+<!-- Icônes pour iOS -->
+<link href="icons/icon-192x192.png" rel="apple-touch-icon"/>
+<link href="icons/icon-512x512.png" rel="apple-touch-icon" sizes="512x512"/>
+<!-- Couleur de la barre d'état iOS -->
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<!-- Thème color -->
+<meta content="#2d4654" name="theme-color"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&amp;family=Montserrat:wght@200;300;400&amp;display=swap" rel="stylesheet"/>
+<!-- Styles -->
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>Cohérence Cardiaque</h1>
+<div class="subtitle">Harmonie · Équilibre · Sérénité</div>
+</div>
+<div class="main-content">
+<div class="breathing-zone" id="breathingZone">
+<div class="circle-container">
+<div class="breathing-circle" id="breathingCircle">
+<div class="breath-text" id="breathText"></div>
+</div>
+</div>
+<div class="timer-display" id="timerDisplay">00:00</div>
+
+<!-- Historique (se déplie sous le bouton) -->
+<!-- NOTE: Le panneau est placé plus bas, dans le control-panel, juste après le bouton Historique. -->
+</div>
+<div class="progress-bar">
+<div class="progress-fill" id="progressFill" style="width: 0%"></div>
+</div>
+<div class="session-info">
+<div class="session-stat">
+<div class="session-stat-label">Cycles</div>
+<div class="session-stat-value" id="cycleCount">0</div>
+</div>
+<div class="session-stat">
+<div class="session-stat-label">Respirations</div>
+<div class="session-stat-value" id="breathCount">0</div>
+</div>
+</div>
+</div>
+<div class="control-panel">
+<div class="control-section">
+<label class="control-label">Durée de la séance</label>
+<div class="input-wrapper">
+<input id="sessionDuration" max="30" min="1" type="number" value="5"/>
+<div class="file-name">En minutes</div>
+</div>
+</div>
+<div class="divider"></div>
+<div class="control-section">
+<label class="control-label">Rythme respiratoire</label>
+<div class="input-group">
+<div class="input-wrapper">
+<div class="input-label">Inspiration (sec)</div>
+<input id="inhaleTime" max="10" min="3" type="number" value="5"/>
+</div>
+<div class="input-wrapper">
+<div class="input-label">Expiration (sec)</div>
+<input id="exhaleTime" max="10" min="3" type="number" value="5"/>
+</div>
+</div>
+</div>
+<div class="divider"></div>
+<div class="control-section">
+<label class="control-label">Sons de respiration</label>
+<div class="input-wrapper">
+<div class="input-label">Son d'inspiration</div>
+<select id="inhaleSound">
+<option value="none">Aucun</option>
+</select>
+<div class="volume-control">
+<span class="volume-icon">🔉</span>
+<input class="volume-slider" id="inhaleVolume" max="100" min="0" type="range" value="70"/>
+<span class="volume-value" id="inhaleVolumeValue">70%</span>
+</div>
+</div>
+<div class="input-wrapper" style="margin-top: 1rem;">
+<div class="input-label">Son d'expiration</div>
+<select id="exhaleSound">
+<option value="none">Aucun</option>
+</select>
+<div class="volume-control">
+<span class="volume-icon">🔉</span>
+<input class="volume-slider" id="exhaleVolume" max="100" min="0" type="range" value="70"/>
+<span class="volume-value" id="exhaleVolumeValue">70%</span>
+</div>
+</div>
+<div id="customInhaleUpload" style="display: none; margin-top: 1rem;">
+<div class="file-input-wrapper">
+<label class="file-input-label" for="customInhaleFile">
+                                📁 Choisir un son d'inspiration
+                            </label>
+<input accept="audio/*" id="customInhaleFile" type="file"/>
+</div>
+<div class="file-name" id="customInhaleName"></div>
+</div>
+<div id="customExhaleUpload" style="display: none; margin-top: 1rem;">
+<div class="file-input-wrapper">
+<label class="file-input-label" for="customExhaleFile">
+                                📁 Choisir un son d'expiration
+                            </label>
+<input accept="audio/*" id="customExhaleFile" type="file"/>
+</div>
+<div class="file-name" id="customExhaleName"></div>
+</div>
+</div>
+<div class="divider"></div>
+<div class="control-section">
+<label class="control-label">Musique d'ambiance</label>
+<div class="file-input-wrapper">
+<label class="file-input-label" for="backgroundMusic">
+                            🎵 Ajouter des musiques de fond
+                        </label>
+<input accept="audio/mp3,audio/mpeg,audio/*" id="backgroundMusic" multiple="" type="file"/>
+</div>
+<div class="file-name" id="musicFileName"></div>
+<div id="musicLibrary" style="display: none; margin-top: 1rem;">
+<div class="input-label">Bibliothèque musicale</div>
+<div class="music-list" id="musicList"></div>
+</div>
+<div class="volume-control" id="musicVolumeControl" style="display: none; margin-top: 1rem;">
+<span class="volume-icon">🎵</span>
+<input class="volume-slider" id="musicVolume" max="100" min="0" type="range" value="30"/>
+<span class="volume-value" id="musicVolumeValue">30%</span>
+</div>
+</div>
+<button class="btn btn-primary" id="startBtn">Commencer</button>
+<button class="btn btn-secondary" id="stopBtn" style="display: none;">Arrêter</button>
+<button class="btn btn-secondary history-btn" id="historyBtn" type="button" aria-expanded="false" aria-controls="historyPanel">Historique</button>
+
+<!-- Panneau Historique (dépliable) -->
+<section class="history-panel" id="historyPanel" aria-hidden="true">
+  <div class="history-panel-head">
+    <h2 class="history-panel-title">Historique</h2>
+    <button class="icon-btn" id="historyCloseBtn" type="button" aria-label="Fermer">✕</button>
+  </div>
+  <div class="history-grid" id="historyGrid"></div>
+  <div class="history-actions">
+    <button class="btn btn-secondary" id="historyResetBtn" type="button">Réinitialiser l’historique</button>
+  </div>
+</section>
+<div class="credits">Fais avec ❤️ par Chris</div>
+</div>
+</div>
+</div>
+
+<!-- Écran de fin de séance (plein écran) -->
+<div class="end-screen" id="endScreen" aria-hidden="true">
+  <div class="end-screen-card" role="dialog" aria-modal="true" aria-labelledby="endScreenTitle">
+    <div class="end-screen-icon" aria-hidden="true">🌿</div>
+    <h2 id="endScreenTitle">Te voilà détendu(e)</h2>
+    <p id="endScreenMsg">Prends une seconde pour ressentir le calme. Tu peux relancer une nouvelle séance quand tu veux.</p>
+    <button class="btn primary" id="endScreenCloseBtn" type="button">Nouvelle séance</button>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<!-- PWA Service Worker -->
+<script>
+        // Enregistrement du Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker enregistré:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('❌ Échec de l\'enregistrement du Service Worker:', error);
+                    });
+            });
+        }
+
+        // Gestion de l'installation PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('💡 L\'application peut être installée');
+        });
+    </script>
+</body>
+</html>
