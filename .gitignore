@@ -31,3 +31,4 @@ Desktop.ini
 # Temporary files
 *.tmp
 .cache/
+.DS_Store
